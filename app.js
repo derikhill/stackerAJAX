@@ -6,6 +6,12 @@ $(document).ready( function() {
 		var tags = $(this).find("input[name='tags']").val();
 		getUnanswered(tags);
 	});
+
+	$('.inspiration-getter').submit( function(event){
+		$('.results').html('');
+		var answerers = $(this).find("input[name='answerers']").val();
+		getInspiration(answerers);
+	})
 });
 
 // this function takes the question object returned by StackOverflow 
@@ -41,6 +47,22 @@ var showQuestion = function(question) {
 	return result;
 };
 
+var showAnswerer = function(answerer) {
+	
+	// clone our result template code
+	var result = $('.templates .answerer').clone();
+
+	// set some properties related to answerer
+	var asker = result.find('.answerer');
+	asker.html('<p>Name: <a target="_blank" href=http://stackoverflow.com/users/' + answerer.user.user_id + ' >' +
+													answerer.user.display_name + 
+												'</a>' +
+							'</p>' +
+ 							'<p>Reputation: ' + answerer.user.reputation + '</p>'
+	);
+
+	return result;
+};
 
 // this function takes the results object from StackOverflow
 // and creates info about search results to be appended to DOM
@@ -88,5 +110,33 @@ var getUnanswered = function(tags) {
 	});
 };
 
+var getInspiration = function(answerers) {
+	
+	// the parameters we need to pass in our request to StackOverflow's API
+	var request = {tagged: answerers,
+								site: 'stackoverflow',
+								order: 'desc',
+								peroid: 'month'};
+	
+	var result = $.ajax({
+		url: "http://api.stackexchange.com/2.2/tags/{tags}/top-answerers/month",
+		data: request,
+		dataType: "jsonp",
+		type: "GET",
+		})
+	.done(function(result){
+		var searchResults = showSearchResults(request.tagged, result.items.length);
 
+		$('.search-results').html(searchResults);
+
+		$.each(result.items, function(i, item) {
+			var answer = showAnswerer(item);
+			$('.results').append(answer);
+		});
+	})
+	.fail(function(jqXHR, error, errorThrown){
+		var errorElem = showError(error);
+		$('.search-results').append(errorElem);
+	});
+};
 
